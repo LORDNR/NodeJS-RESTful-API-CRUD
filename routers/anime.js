@@ -1,105 +1,99 @@
-const express = require('express');
-const { add } = require('nodemon/lib/rules');
+const express = require("express");
 const router = express.Router();
-const dbCon = require('../dbcon');
-const app = require('../server');
+
+//prisma
+const { PrismaClient } = require("@prisma/client");
+const prisma = new PrismaClient();
 
 //GET read
-router.get('/' , (req , res)=>{
-    dbCon.query('SELECT * FROM anime',(err, results, fields) => {
-        if(err) throw err;
+router.get("/", async (req, res) => {
+  const animes = await prisma.anime.findMany();
 
-        let msg = ""
-        if(results === undefined || results.length == 0) {
-            msg = "Anime table is empty";
-        } else {
-            msg = "Successfully retrieved all Anime";
-        }
-        return res.send({ err: false, data: results, msg: msg})
-    })
-})
+  if (animes.length == 0) {
+    msg = "Anime table is empty";
+  } else {
+    msg = "Successfully retrieved all Anime";
+  }
+
+  res.send({
+    err: false,
+    data: animes,
+    msg: msg,
+  });
+});
+
 //GET by id || read 1
-router.get('/:id' , (req , res)=>{
-    let id = req.body.id;
 
-    if(!id) {
-        return res.status(400).send({ err: true, msg: "Please provide anime id"});
-    } else {
-        dbCon.query('SELECT * FROM anime WHERE id = ?', [id], (err, results, fields) => {
-            if(err) throw err;
-    
-            let msg = ""
-            if(results === undefined || results.length == 0) {
-                msg = "Anime not found";
-            } else {
-                msg = "Successfully retrieved Anime data";
-            }
-            return res.send({ err: false, data: results[0], msg: msg})
-        })
-    }
-})
+router.get("/:id", async (req, res) => {
+  const id = Number(req.params.id);
+  const anime = await prisma.anime.findUnique({
+    where: {
+      id: id,
+    },
+  });
+
+  if (anime === null) {
+    msg = "Anime table is empty";
+  } else {
+    msg = "Successfully retrieved Anime data";
+  }
+
+  res.send({
+    err: false,
+    data: anime,
+    msg: msg,
+  });
+});
 
 //POST Insert
-router.post('/' , (req , res)=>{
-    let name = req.body.name;
-    let author = req.body.author;
+router.post("/", async (req, res) => {
+  const { name, author } = req.body;
 
-    //validation
-    if(!name || !author) {
-        return res.status(400).send({ err: true, msg: "Please provide anime name and author"});
-    } else {
-        dbCon.query('INSERT INTO anime (name, author) VALUES(?, ?)', [name, author], (err, results, fields) => {
-            if(err) throw err;
-            return res.send({ err: false, data: results, msg: "Anime Successfully added"})
-        })
-    }
+  //validation
+  if (!name || !author) {
+    return res
+      .status(400)
+      .send({ err: true, msg: "Please provide anime name and author" });
+  }
+  const anime = await prisma.anime.create({
+    data: {
+      name: name,
+      author: author,
+    },
+  });
+  res.send({ err: false, data: anime, msg: "Anime Successfully added" });
 });
 
 //Put Update
-router.put('/', (req, res) => {
-    let id = req.body.id;
-    let name = req.body.name;
-    let author = req.body.author;
+router.put("/:id", async (req, res) => {
+  const id = Number(req.params.id);
+  const { name, author } = req.body;
 
-    //validation
-    if(!id || !name || !author) {
-        return res.status(400).send({ err: true, msg: "Please provide anime id, name and author"});
-    } else {
-        dbCon.query('UPDATE anime SET name = ?, author = ? WHERE id = ?', [name, author, id], (err, results, fields) => {
-            if(err) throw err;
-            
-            let msg = "";
-            if(results.changedRows === 0) {
-                msg = "Anime not found or data are same";
-            } else {
-                msg = "Anime Successfully Updated";
-            }
-            return res.send({ err: false, data: results, msg: msg});
-        })
-    }
-})
+  //validation
+  if (!id || !name || !author) {
+    return res
+      .status(400)
+      .send({ err: true, msg: "Please provide anime id, name and author" });
+  }
+  const anime = await prisma.anime.update({
+    where: { id: id },
+    data: { name: name, author: author },
+  });
+  res.send({ err: false, data: anime, msg: "Anime Successfully Updated" });
+});
 
 //Delete by id
-router.delete('/:id' , (req , res)=>{
-    let id = req.body.id;
+router.delete("/:id", async (req, res) => {
+  const id = Number(req.params.id);
+  if (!id) {
+    return res.status(400).send({ err: true, msg: "Please provide anime id" });
+  }
 
-    if(!id) {
-        return res.status(400).send({ err: true, msg: "Please provide anime id"});
-    } else {
-        dbCon.query('DELETE FROM anime WHERE id = ?', [id], (err, results, fields) => {
-            if(err) throw err;
-    
-            let msg = ""
-            if(results.affectedRows === 0) {
-                msg = "Anime not found";
-            } else {
-                msg = "Anime Successfully deleted";
-            }
-            return res.send({ err: false, data: results[0], msg: msg})
-        })
-    }
+  const anime = await prisma.anime.delete({
+    where: { id: id },
+  });
 
-    
-})
+  res.status(204).end();
+});
 
 module.exports = router;
