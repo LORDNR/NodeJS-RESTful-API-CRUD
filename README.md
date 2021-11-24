@@ -2,12 +2,10 @@
 
 >  yarn install
 
-> yarn prisma init
 
-
-file   .env
-mysql://USER:PASSWORD@HOST:PORT/DATABASE
-DATABASE_URL="mysql://root:@localhost:3306/DATABASE"
+createFile   .env
+  PORT="3001"
+  DATABASE_URL="mysql://USER:PASSWORD@HOST:PORT/DATABASE"
 
 > yarn prisma migrate dev --name init
 
