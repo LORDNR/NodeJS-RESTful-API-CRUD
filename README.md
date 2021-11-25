@@ -4,8 +4,9 @@
 
 
 createFile   .env
-  PORT="3001"
-  DATABASE_URL="mysql://USER:PASSWORD@HOST:PORT/DATABASE"
+ 
+  > PORT="3001"
+  > DATABASE_URL="mysql://USER:PASSWORD@HOST:PORT/DATABASE"
 
 > yarn prisma migrate dev --name init
 
